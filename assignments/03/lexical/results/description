@@ -1,0 +1,14 @@
+Descriptions of the experiments:
+% 1 - baseline model check
+% 2 - baseline model check
+% 3 - baseline batch size=10, lr 0.001
+% 4 - baseline batch=10, lr 0.001
+% 5 - baseline batch=10, lr0.0005 / batch 100, lr 0.0003
+% 6 - baseline batch 100, lr 0.0003
+% 7 - lexical batch = 10, lr=0.001
+% 8 - lexical batch = 100, lr = 0.0003
+% 9 - lexical batch = 1, lr = 0.0003
+% 10 - lexical batch = 100, lr = 0.0006
+% 11 - baseline batch = 100, lr = 0.0006
+% 12 - lexical batch = 10, lr = 0.0003
+% 13 - baseline batch = 10, lr = 0.0003

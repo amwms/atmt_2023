@@ -1,0 +1,20 @@
+{
+ "name": "BLEU",
+ "score": 16.5,
+ "signature": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.0.0",
+ "verbose_score": "49.7/22.5/11.6/5.7 (BP = 1.000 ratio = 1.074 hyp_len = 4181 ref_len = 3892)",
+ "nrefs": "1",
+ "case": "mixed",
+ "eff": "no",
+ "tok": "13a",
+ "smooth": "exp",
+ "version": "2.0.0"
+}
+
+INFO: Epoch 176: loss 1.585 | lr 0.0003 | num_tokens 9.1 | batch_size 100 | grad_norm 8.371 | clip 0.95                                                                                                                          
+INFO: Epoch 176: valid_loss 2.36 | num_tokens 9.14 | batch_size 500 | valid_perplexity 10.6
+INFO: Epoch 177: loss 1.576 | lr 0.0003 | num_tokens 9.1 | batch_size 100 | grad_norm 8.267 | clip 0.95                                                                                                                          
+INFO: Epoch 177: valid_loss 2.36 | num_tokens 9.14 | batch_size 500 | valid_perplexity 10.6
+INFO: Epoch 178: loss 1.572 | lr 0.0003 | num_tokens 9.1 | batch_size 100 | grad_norm 8.599 | clip 0.95                                                                                                                          
+INFO: Epoch 178: valid_loss 2.36 | num_tokens 9.14 | batch_size 500 | valid_perplexity 10.6
+INFO: No validation set improvements observed for 3 epochs. Early stop! 
