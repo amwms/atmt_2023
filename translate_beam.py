@@ -30,6 +30,9 @@ def get_args():
 
     # Add beam search arguments
     parser.add_argument('--beam-size', default=5, type=int, help='number of hypotheses expanded in beam search')
+    parser.add_argument('--squared-regularizer', default=0.0, type=float, help='lambda hyperparameter for squared regularization')
+    parser.add_argument('--gamma', default=0.0, type=float, help='gamma hyperparameter for divarsification for N-best results')
+    parser.add_argument('--N', default=1, type=int, help='number of N-best results')
     # alpha hyperparameter for length normalization (described as lp in https://arxiv.org/pdf/1609.08144.pdf equation 14)
     parser.add_argument('--alpha', default=0.0, type=float, help='alpha for softer length normalization')
 
@@ -107,6 +110,13 @@ def main(args):
                 log_p = torch.where(best_candidate == tgt_dict.unk_idx, backoff_log_p, best_log_p)
                 log_p = log_p[-1]
 
+                # compute the regularized log probability
+                log_p = log_p - args.squared_regularizer * torch.pow(log_p, 2)
+
+                # compute the diversified log probability for N-best results
+                k_prime = j + 1
+                log_p = log_p - args.gamma * k_prime
+
                 # Store the encoder_out information for the current input sentence and beam
                 emb = encoder_out['src_embeddings'][:,i,:]
                 lstm_out = encoder_out['src_out'][0][:,i,:]
@@ -163,6 +173,13 @@ def main(args):
                     log_p = log_p[-1]
                     next_word = torch.cat((prev_words[i][1:], next_word[-1:]))
 
+                    # compute the regularized log probability
+                    log_p = log_p - args.squared_regularizer * torch.pow(log_p, 2)
+
+                    # compute the diversified log probability for N-best results
+                    k_prime = j + 1
+                    log_p = log_p - args.gamma * k_prime
+
                     # Get parent node and beam search object for corresponding sentence
                     node = nodes[i]
                     search = node.search
@@ -195,34 +212,59 @@ def main(args):
                 search.prune()
 
         # Segment into sentences
-        best_sents = torch.stack([search.get_best()[1].sequence[1:].cpu() for search in searches])
-        decoded_batch = best_sents.numpy()
+        # best_sents = torch.stack([search.get_best()[1].sequence[1:].cpu() for search in searches])
+        # decoded_batch = best_sents.numpy()
         #import pdb;pdb.set_trace()
 
-        output_sentences = [decoded_batch[row, :] for row in range(decoded_batch.shape[0])]
+        # output_sentences = [decoded_batch[row, :] for row in range(decoded_batch.shape[0])]
+
+        output_sentences_list = []
+        for search in searches:
+            best_n = search.get_best(args.N)
+            best_sents = [best_n[i][1].sequence[1:].cpu().numpy() for i in range(args.N)]
+            output_sentences_list.append(best_sents)
 
         # __QUESTION 6: What is the purpose of this for loop?
-        temp = list()
-        for sent in output_sentences:
-            first_eos = np.where(sent == tgt_dict.eos_idx)[0]
-            if len(first_eos) > 0:
-                temp.append(sent[:first_eos[0]])
-            else:
-                temp.append(sent)
-        output_sentences = temp
+        # temp = list()
+        # for sent in output_sentences:
+        #     first_eos = np.where(sent == tgt_dict.eos_idx)[0]
+        #     if len(first_eos) > 0:
+        #         temp.append(sent[:first_eos[0]])
+        #     else:
+        #         temp.append(sent)
+        # output_sentences = temp
+
+        temp_output_sentences_list = list()
+        for output_sentences in output_sentences_list:
+            temp = list()
+            for sent in output_sentences:
+                first_eos = np.where(sent == tgt_dict.eos_idx)[0]
+                if len(first_eos) > 0:
+                    temp.append(sent[:first_eos[0]])
+                else:
+                    temp.append(sent)
+            temp_output_sentences_list.append(temp)
+        output_sentences_list = temp_output_sentences_list
 
         # Convert arrays of indices into strings of words
-        output_sentences = [tgt_dict.string(sent) for sent in output_sentences]
-
-        for ii, sent in enumerate(output_sentences):
-            all_hyps[int(sample['id'].data[ii])] = sent
-
+        # output_sentences = [tgt_dict.string(sent) for sent in output_sentences]
+        output_sentences_list = [[tgt_dict.string(sent) for sent in output_sentences] for output_sentences in output_sentences_list]
+    
+        # for ii, sent in enumerate(output_sentences):
+            # all_hyps[int(sample['id'].data[ii])] = sent
+        for ii, output_sentences in enumerate(output_sentences_list):
+            for sent in output_sentences:
+                if int(sample['id'].data[ii]) not in all_hyps.keys():
+                    all_hyps[int(sample['id'].data[ii])] = []
+                all_hyps[int(sample['id'].data[ii])].append(sent)
 
     # Write to file
     if args.output is not None:
         with open(args.output, 'w') as out_file:
             for sent_id in range(len(all_hyps.keys())):
-                out_file.write(all_hyps[sent_id] + '\n')
+                # out_file.write(all_hyps[sent_id] + '\n')
+                for sent in all_hyps[sent_id]:
+                    out_file.write(sent + '\n')
 
 
 if __name__ == '__main__':
